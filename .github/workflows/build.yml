@@ -18,26 +18,33 @@ jobs:
         with:
           python-version: '3.10'
       
-      - name: Install dependencies
+      - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y git zip unzip openjdk-11-jdk autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev
-          pip install buildozer cython
+          sudo apt-get install -y git zip unzip openjdk-11-jdk autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev libncurses5 libncurses5-dev libncursesw5-dev
+      
+      - name: Install Python dependencies
+        run: |
+          pip install buildozer cython==0.29.36
           pip install kivy==2.2.1
       
       - name: Setup buildozer.spec
         run: |
           cd android-app
-          # Проверяем и добавляем version если нет
+          # Проверяем version
           if ! grep -q "^version = " buildozer.spec; then
             sed -i '/^\[app\]/a version = 0.1' buildozer.spec
           fi
-          cat buildozer.spec | head -20
+          echo "=== buildozer.spec ==="
+          cat buildozer.spec | head -25
+          echo "=== Files in android-app ==="
+          ls -la
       
       - name: Build APK
         run: |
           cd android-app
-          buildozer android debug
+          buildozer -v android debug
+        timeout-minutes: 60
       
       - name: Upload APK
         uses: actions/upload-artifact@v4
