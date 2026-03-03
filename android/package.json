@@ -1,0 +1,13 @@
+{
+  "name": "daily-rise",
+  "version": "1.0.0",
+  "description": "Daily Rise Android APK",
+  "main": "index.js",
+  "scripts": {
+    "build": "bubblewrap build --directory ./android",
+    "init": "bubblewrap init --manifest ../app/static/manifest.json --directory ./android"
+  },
+  "devDependencies": {
+    "@bubblewrap/cli": "^1.22.0"
+  }
+}

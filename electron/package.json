@@ -1,0 +1,40 @@
+{
+  "name": "daily-rise",
+  "version": "1.0.0",
+  "description": "Трекер привычек Daily Rise",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win --mac --linux"
+  },
+  "author": "Daily Rise Team",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-builder": "^24.9.1"
+  },
+  "build": {
+    "appId": "com.dailyrise.app",
+    "productName": "Daily Rise",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "app/**/*"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "app/static/icon.ico"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "app/static/icon.icns"
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "app/static/icon.png"
+    }
+  }
+}

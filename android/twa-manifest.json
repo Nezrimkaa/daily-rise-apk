@@ -1,0 +1,28 @@
+{
+  "packageId": "com.dailyrise.app",
+  "host": "127.0.0.1:8000",
+  "name": "Daily Rise",
+  "launcherName": "Daily Rise",
+  "display": "standalone",
+  "themeColor": "#0071e3",
+  "navigationColor": "#0071e3",
+  "navigationColorDark": "#1c1c1e",
+  "backgroundColor": "#f5f5f7",
+  "startUrl": "/",
+  "iconUrl": "file:///android/icon.png",
+  "splashScreenFadeOutDuration": 300,
+  "enableNotifications": true,
+  "shortcuts": [
+    {
+      "name": "Новая привычка",
+      "url": "/?action=new",
+      "chosenIconUrl": "file:///android/icon.png"
+    }
+  ],
+  "webviewWrapsContent": false,
+  "signedKeyStorePath": "./keystore.keystore",
+  "signingKey": {
+    "alias": "dailyrise",
+    "keyStorePassword": "changeit"
+  }
+}
