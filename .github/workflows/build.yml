@@ -65,7 +65,8 @@ jobs:
       - name: Build APK
         run: |
           cd android-app
-          export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
+          # Используем Temurin 17 (он есть на runner)
+          export JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64
           export ANDROID_HOME=$HOME/.buildozer/android/platform/android-sdk
           export ANDROID_SDK_ROOT=$HOME/.buildozer/android/platform/android-sdk
           export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/tools/bin:$PATH
