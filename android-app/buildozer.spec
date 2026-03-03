@@ -17,9 +17,7 @@ android.arch = arm64-v8a
 
 version = 0.1
 
-# Требования Python для Buildozer
-# Используем упрощённые зависимости которые можно скомпилировать
-requirements = python3,kivy==2.2.1,requests,urllib3,pymobiledevice3
+requirements = python3,kivy==2.2.1,requests,urllib3
 
 android.add_aars =
 android.add_jars =

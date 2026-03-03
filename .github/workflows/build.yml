@@ -21,43 +21,47 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y git zip unzip openjdk-11-jdk autoconf libtool pkg-config zlib1g-dev cmake libffi-dev libssl-dev libncursesw5-dev libncurses-dev
+          sudo apt-get install -y git zip unzip openjdk-11-jdk autoconf libtool pkg-config zlib1g-dev cmake libffi-dev libssl-dev libncursesw5-dev libncurses-dev wget curl
       
       - name: Install Python dependencies
         run: |
           pip install buildozer cython==0.29.36
-          pip install kivy==2.2.1
       
       - name: Accept Android licenses
         run: |
           mkdir -p ~/.android
           echo "count=1" > ~/.android/repositories.cfg
-          echo "86047e10140921b9e05ad182a2d66b1f246993f1" >> ~/.android/knownPackages
-          echo "24062a3813132b92f93e00176a602f82e3662c42" >> ~/.android/knownPackages
-          echo "504203651f478d4611106c09c7fd84c715f98531" >> ~/.android/knownPackages
-          echo "Android SDK licenses accepted" > ~/.android/accept_licenses
+          yes | sdkmanager --licenses > /dev/null 2>&1 || true
+          echo "y" | sdkmanager "tools" "platform-tools" "build-tools;30.0.3" "platforms;android-31" || true
       
       - name: Setup buildozer.spec
         run: |
           cd android-app
-          if ! grep -q "^version = " buildozer.spec; then
-            sed -i '/^\[app\]/a version = 0.1' buildozer.spec
-          fi
-          echo "=== buildozer.spec ==="
-          cat buildozer.spec | head -25
-          echo "=== Files ==="
+          echo "=== Files in android-app ==="
           ls -la
+          echo "=== buildozer.spec ==="
+          cat buildozer.spec
       
       - name: Build APK
         run: |
           cd android-app
           export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
-          export ANDROID_HOME=$HOME/.buildozer/android/platform/android-sdk
-          buildozer -v android debug
-        timeout-minutes: 60
+          buildozer android debug
+        timeout-minutes: 90
+      
+      - name: Check build output
+        run: |
+          cd android-app
+          echo "=== Bin directory ==="
+          ls -la bin/ || echo "bin/ not found"
+          find . -name "*.apk" 2>/dev/null || echo "No APK found"
       
       - name: Upload APK
         uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: daily-rise-apk
-          path: android-app/bin/*.apk
+          path: |
+            android-app/bin/*.apk
+            android-app/**/*.apk
+          if-no-files-found: warn
