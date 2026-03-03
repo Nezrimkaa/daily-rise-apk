@@ -24,8 +24,13 @@ jobs:
       
       - name: Setup Android SDK for buildozer
         run: |
-          # Устанавливаем JAVA_HOME (Temurin 17 есть на runner)
+          # Устанавливаем JAVA_HOME и добавляем Java в PATH
           export JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64
+          export PATH=$JAVA_HOME/bin:$PATH
+          
+          # Проверяем Java
+          java -version
+          javac -version
           
           # Создаём директорию
           mkdir -p ~/.buildozer/android/platform/
@@ -61,15 +66,15 @@ jobs:
           echo "=== Verification ==="
           ls -la ~/.buildozer/android/platform/android-sdk/tools/bin/
           
-          # Тестируем sdkmanager с правильным JAVA_HOME
+          # Тестируем sdkmanager
           echo "=== Testing sdkmanager ==="
-          $JAVA_HOME/bin/java -version
           ~/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager --version 2>&1 || echo "Version check failed but continuing"
       
       - name: Build APK
         run: |
           cd android-app
           export JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64
+          export PATH=$JAVA_HOME/bin:$PATH
           export ANDROID_HOME=$HOME/.buildozer/android/platform/android-sdk
           export ANDROID_SDK_ROOT=$HOME/.buildozer/android/platform/android-sdk
           export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/tools/bin:$PATH
