@@ -24,6 +24,9 @@ jobs:
       
       - name: Copy Android SDK to buildozer
         run: |
+          # Создаём директорию
+          mkdir -p ~/.buildozer/android/platform/
+          
           # Копируем SDK из системной директории в buildozer
           echo "Copying Android SDK..."
           cp -r /usr/local/lib/android/sdk ~/.buildozer/android/platform/android-sdk
