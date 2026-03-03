@@ -22,14 +22,21 @@ jobs:
         run: |
           pip install buildozer cython==0.29.36
       
-      - name: Copy Android SDK to buildozer
+      - name: Setup Android SDK for buildozer
         run: |
-          # Создаём директорию
+          # Создаём директорию buildozer
           mkdir -p ~/.buildozer/android/platform/
           
-          # Копируем SDK из системной директории в buildozer
+          # Копируем SDK из системной директории
           echo "Copying Android SDK..."
           cp -r /usr/local/lib/android/sdk ~/.buildozer/android/platform/android-sdk
+          
+          # Создаём symlink latest -> 12.0 (buildozer ожидает 'latest')
+          cd ~/.buildozer/android/platform/android-sdk/cmdline-tools
+          if [ -d "12.0" ] && [ ! -d "latest" ]; then
+            ln -s 12.0 latest
+            echo "Created symlink: latest -> 12.0"
+          fi
           
           # Создаём лицензии
           mkdir -p ~/.buildozer/android/platform/android-sdk/licenses
@@ -37,10 +44,18 @@ jobs:
           echo "d56f5187479451eabf01fb78af6dfcb131a6481e" >> ~/.buildozer/android/platform/android-sdk/licenses/android-sdk-license
           echo "24333f8a63b6825ea9c5514f83c2829b004d1fee" >> ~/.buildozer/android/platform/android-sdk/licenses/android-sdk-license
           
+          # Создаём tools/bin symlink (buildozer может искать там)
+          mkdir -p ~/.buildozer/android/platform/android-sdk/tools
+          ln -s ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin ~/.buildozer/android/platform/android-sdk/tools/bin
+          
           echo "=== SDK Structure ==="
           ls -la ~/.buildozer/android/platform/android-sdk/
+          echo "=== cmdline-tools ==="
+          ls -la ~/.buildozer/android/platform/android-sdk/cmdline-tools/
+          echo "=== tools/bin ==="
           ls -la ~/.buildozer/android/platform/android-sdk/tools/bin/ 2>/dev/null || echo "tools/bin not found"
-          ls -la ~/.buildozer/android/platform/android-sdk/cmdline-tools/ 2>/dev/null || echo "cmdline-tools not found"
+          echo "=== sdkmanager check ==="
+          ls -la ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager 2>/dev/null && echo "✅ sdkmanager found" || echo "❌ sdkmanager not found"
       
       - name: Build APK
         run: |
