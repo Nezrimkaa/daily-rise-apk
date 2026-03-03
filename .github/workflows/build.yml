@@ -27,12 +27,27 @@ jobs:
         run: |
           pip install buildozer cython==0.29.36
       
-      - name: Accept Android licenses
+      - name: Setup Android SDK
         run: |
-          mkdir -p ~/.android
-          echo "count=1" > ~/.android/repositories.cfg
-          yes | sdkmanager --licenses > /dev/null 2>&1 || true
-          echo "y" | sdkmanager "tools" "platform-tools" "build-tools;30.0.3" "platforms;android-31" || true
+          # Создаём директорию SDK
+          mkdir -p $ANDROID_HOME/cmdline-tools
+          cd $ANDROID_HOME/cmdline-tools
+          
+          # Скачиваем command line tools
+          wget -q https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O cmdline-tools.zip
+          unzip -q cmdline-tools.zip
+          mv cmdline-tools latest
+          rm cmdline-tools.zip
+          
+          # Принимаем все лицензии автоматически
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses > /dev/null 2>&1 || true
+          
+          # Устанавливаем необходимые компоненты
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --install "platform-tools" "platforms;android-31" "build-tools;30.0.3" "ndk;25.2.9519653"
+          
+          echo "Android SDK installed successfully"
+        env:
+          ANDROID_HOME: /opt/android-sdk
       
       - name: Setup buildozer.spec
         run: |
@@ -46,6 +61,8 @@ jobs:
         run: |
           cd android-app
           export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
+          export ANDROID_HOME=/opt/android-sdk
+          export PATH=$ANDROID_HOME/tools:$ANDROID_HOME/tools/bin:$ANDROID_HOME/platform-tools:$PATH
           buildozer android debug
         timeout-minutes: 90
       
