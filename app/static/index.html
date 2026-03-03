@@ -827,8 +827,8 @@
                         </div>
                     </div>
                     <div class="habit-actions">
-                        <button class="btn btn-success btn-sm" onclick="markComplete(${h.id}, ${isQuant}, ${target}, '${unit}')">
-                            ${isQuant ? '➕' : '✓'}
+                        <button class="btn btn-success btn-sm" onclick="markComplete(${h.id}, ${isQuant ? 1 : 0}, ${target}, '${unit ? unit.replace(/'/g, "\\'") : ''}')">
+                            ${isQuant ? '➕ Добавить' : '✓ Готово'}
                         </button>
                         <button class="btn btn-sm" style="background: var(--bg-tertiary);" onclick="showStats(${h.id})">📊</button>
                         <button class="btn btn-danger btn-sm" onclick="deleteHabit(${h.id})">✕</button>
@@ -878,9 +878,10 @@
 
         // Отметка выполнения
         async function markComplete(habitId, isQuant, target, unit) {
+            console.log('markComplete called:', { habitId, isQuant, target, unit });
             let value = 1;
 
-            if (isQuant) {
+            if (isQuant === 1 || isQuant === true) {
                 // Создаём модальное окно для ввода количества
                 const modal = document.createElement('div');
                 modal.className = 'modal';
@@ -889,7 +890,7 @@
                     <div class="modal-content">
                         <h2>➕ Добавить прогресс</h2>
                         <div class="form-group">
-                            <label>Сколько ${unit} выполнили?</label>
+                            <label>Сколько ${unit || 'раз'} выполнили?</label>
                             <input type="number" id="progress-value" value="${target}" min="1" step="1">
                         </div>
                         <button class="btn" onclick="submitProgress(${habitId})">Добавить</button>
@@ -906,9 +907,15 @@
                 }, 100);
             } else {
                 // Для привычек без цели просто добавляем 1
+                console.log('Adding progress:', habitId, 1);
                 await logProgress(habitId, 1);
             }
         }
+
+        // Делаем функции глобальными
+        window.markComplete = markComplete;
+        window.closeProgressModal = closeProgressModal;
+        window.submitProgress = submitProgress;
 
         function closeProgressModal() {
             const modal = document.getElementById('progress-modal');
@@ -917,20 +924,24 @@
 
         async function submitProgress(habitId) {
             const value = document.getElementById('progress-value').value;
+            console.log('submitProgress:', { habitId, value });
             await logProgress(habitId, parseInt(value));
             closeProgressModal();
         }
 
         async function logProgress(habitId, value) {
+            console.log('logProgress:', { habitId, value });
             try {
                 const res = await fetch(`${API}/api/habits/${habitId}/log?value=${value}`, {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
+                console.log('logProgress response:', res.status);
                 if (res.ok) {
                     await loadHabits();
                 } else {
-                    alert('Ошибка при добавлении прогресса');
+                    const err = await res.json();
+                    alert('Ошибка при добавлении прогресса: ' + (err.detail || 'неизвестная'));
                 }
             } catch (err) {
                 console.error('Error:', err);
