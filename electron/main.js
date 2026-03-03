@@ -1,15 +1,20 @@
 const { app, BrowserWindow, Menu } = require('electron');
 const path = require('path');
 const { spawn } = require('child_process');
+const os = require('os');
 
 let mainWindow;
 let backendProcess;
 
 // Запуск FastAPI бэкенда
 function startBackend() {
-    backendProcess = spawn('python', ['-m', 'uvicorn', 'app.main:app', '--host', '127.0.0.1', '--port', '8000'], {
+    const platform = os.platform();
+    const pythonCmd = platform === 'win32' ? 'python.exe' : 'python3';
+    
+    backendProcess = spawn(pythonCmd, ['-m', 'uvicorn', 'app.main:app', '--host', '127.0.0.1', '--port', '8000'], {
         cwd: path.join(__dirname, '..'),
-        shell: true
+        shell: false,
+        windowsHide: true
     });
 
     backendProcess.stdout.on('data', (data) => {
