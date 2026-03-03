@@ -18,24 +18,64 @@ jobs:
         with:
           python-version: '3.10'
       
+      - name: Debug Android SDK location
+        run: |
+          echo "=== System SDK ==="
+          ls -la /usr/local/lib/android/sdk/
+          echo "=== cmdline-tools ==="
+          ls -la /usr/local/lib/android/sdk/cmdline-tools/
+          if [ -d "/usr/local/lib/android/sdk/cmdline-tools/12.0" ]; then
+            echo "=== cmdline-tools/12.0/bin ==="
+            ls -la /usr/local/lib/android/sdk/cmdline-tools/12.0/bin/
+          fi
+          if [ -d "/usr/local/lib/android/sdk/cmdline-tools/latest" ]; then
+            echo "=== cmdline-tools/latest/bin ==="
+            ls -la /usr/local/lib/android/sdk/cmdline-tools/latest/bin/
+          fi
+          echo "=== tools/bin ==="
+          ls -la /usr/local/lib/android/sdk/tools/bin/ 2>/dev/null || echo "tools/bin not found in system SDK"
+      
       - name: Install Python dependencies
         run: |
           pip install buildozer cython==0.29.36
       
       - name: Setup Android SDK for buildozer
         run: |
-          # Создаём директорию buildozer
+          # Создаём директорию
           mkdir -p ~/.buildozer/android/platform/
           
-          # Копируем SDK из системной директории
+          # Копируем SDK
           echo "Copying Android SDK..."
           cp -r /usr/local/lib/android/sdk ~/.buildozer/android/platform/android-sdk
           
-          # Создаём symlink latest -> 12.0 (buildozer ожидает 'latest')
+          # Проверяем что скопировалось
+          echo "=== Copied SDK ==="
+          ls -la ~/.buildozer/android/platform/android-sdk/
+          echo "=== Copied cmdline-tools ==="
+          ls -la ~/.buildozer/android/platform/android-sdk/cmdline-tools/
+          
+          # Создаём symlink latest если есть 12.0
           cd ~/.buildozer/android/platform/android-sdk/cmdline-tools
-          if [ -d "12.0" ] && [ ! -d "latest" ]; then
+          if [ -d "12.0" ] && [ ! -L "latest" ] && [ ! -d "latest" ]; then
             ln -s 12.0 latest
-            echo "Created symlink: latest -> 12.0"
+            echo "✅ Created symlink: latest -> 12.0"
+          fi
+          
+          # Проверяем sdkmanager
+          echo "=== Checking sdkmanager ==="
+          if [ -f "~/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager" ]; then
+            echo "✅ sdkmanager exists"
+            ls -la ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager
+          else
+            echo "❌ sdkmanager not found at expected path"
+            find ~/.buildozer/android/platform/android-sdk -name "sdkmanager" 2>/dev/null
+          fi
+          
+          # Создаём tools/bin symlink
+          mkdir -p ~/.buildozer/android/platform/android-sdk/tools
+          if [ -d "~/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin" ]; then
+            ln -s ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin ~/.buildozer/android/platform/android-sdk/tools/bin
+            echo "✅ Created tools/bin symlink"
           fi
           
           # Создаём лицензии
@@ -44,18 +84,10 @@ jobs:
           echo "d56f5187479451eabf01fb78af6dfcb131a6481e" >> ~/.buildozer/android/platform/android-sdk/licenses/android-sdk-license
           echo "24333f8a63b6825ea9c5514f83c2829b004d1fee" >> ~/.buildozer/android/platform/android-sdk/licenses/android-sdk-license
           
-          # Создаём tools/bin symlink (buildozer может искать там)
-          mkdir -p ~/.buildozer/android/platform/android-sdk/tools
-          ln -s ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin ~/.buildozer/android/platform/android-sdk/tools/bin
-          
-          echo "=== SDK Structure ==="
-          ls -la ~/.buildozer/android/platform/android-sdk/
-          echo "=== cmdline-tools ==="
-          ls -la ~/.buildozer/android/platform/android-sdk/cmdline-tools/
-          echo "=== tools/bin ==="
-          ls -la ~/.buildozer/android/platform/android-sdk/tools/bin/ 2>/dev/null || echo "tools/bin not found"
-          echo "=== sdkmanager check ==="
-          ls -la ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager 2>/dev/null && echo "✅ sdkmanager found" || echo "❌ sdkmanager not found"
+          # Тестируем sdkmanager напрямую
+          echo "=== Testing sdkmanager ==="
+          export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
+          ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager --list 2>&1 | head -20 || echo "sdkmanager test failed"
       
       - name: Build APK
         run: |
