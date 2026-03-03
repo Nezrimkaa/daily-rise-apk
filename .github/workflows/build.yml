@@ -27,57 +27,58 @@ jobs:
         run: |
           pip install buildozer cython==0.29.36
       
-      - name: Setup Android SDK for buildozer
+      - name: Setup Android SDK
         run: |
-          # Создаём структуру для buildozer
-          mkdir -p ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest
+          # Устанавливаем Android SDK в стандартное место
+          export ANDROID_HOME=/opt/android-sdk
+          mkdir -p $ANDROID_HOME/cmdline-tools/latest
           
           # Скачиваем command line tools
           cd /tmp
           wget -q https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
           unzip -q commandlinetools-linux-9477386_latest.zip
-          
-          # Копируем в структуру buildozer
-          mv cmdline-tools/* ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest/
+          mv cmdline-tools/* $ANDROID_HOME/cmdline-tools/latest/
           
           # Создаём лицензии
-          mkdir -p ~/.buildozer/android/platform/android-sdk/licenses
-          echo "8933bad161af4178b1185d1a37fbf41ea5269c55" > ~/.buildozer/android/platform/android-sdk/licenses/android-sdk-license
-          echo "d56f5187479451eabf01fb78af6dfcb131a6481e" >> ~/.buildozer/android/platform/android-sdk/licenses/android-sdk-license
-          echo "24333f8a63b6825ea9c5514f83c2829b004d1fee" >> ~/.buildozer/android/platform/android-sdk/licenses/android-sdk-license
+          mkdir -p $ANDROID_HOME/licenses
+          echo "8933bad161af4178b1185d1a37fbf41ea5269c55" > $ANDROID_HOME/licenses/android-sdk-license
+          echo "d56f5187479451eabf01fb78af6dfcb131a6481e" >> $ANDROID_HOME/licenses/android-sdk-license
+          echo "24333f8a63b6825ea9c5514f83c2829b004d1fee" >> $ANDROID_HOME/licenses/android-sdk-license
           
-          # Устанавливаем SDK компоненты через sdkmanager
+          # Устанавливаем компоненты
           export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
-          ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager --sdk_root=$HOME/.buildozer/android/platform/android-sdk "platform-tools" "platforms;android-31" "build-tools;30.0.3" "ndk;25.2.9519653"
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_HOME "platform-tools" "platforms;android-31" "build-tools;30.0.3" "ndk;25.2.9519653" "tools"
           
-          # Создаём symlink для tools
-          mkdir -p ~/.buildozer/android/platform/android-sdk/tools
-          ln -s ~/.buildozer/android/platform/android-sdk/cmdline-tools ~/.buildozer/android/platform/android-sdk/tools/bin
+          # Копируем в buildozer директорию (полная копия)
+          rm -rf ~/.buildozer/android/platform/android-sdk
+          mkdir -p ~/.buildozer/android/platform/
+          cp -r $ANDROID_SDK ~/.buildozer/android/platform/android-sdk || cp -r $ANDROID_HOME ~/.buildozer/android/platform/android-sdk
           
-          echo "SDK setup complete"
+          echo "SDK installed"
+          ls -la ~/.buildozer/android/platform/android-sdk/
+          ls -la ~/.buildozer/android/platform/android-sdk/tools/bin/ 2>/dev/null || echo "tools/bin not found"
+          ls -la ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/ 2>/dev/null || echo "cmdline-tools not found"
       
       - name: Build APK
         run: |
           cd android-app
           export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
-          export ANDROID_HOME=$HOME/.buildozer/android/platform/android-sdk
+          export ANDROID_HOME=/opt/android-sdk
           export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/tools/bin:$PATH
+          
+          # Копируем SDK в buildozer если нужно
+          if [ ! -d "$HOME/.buildozer/android/platform/android-sdk/tools/bin" ]; then
+            mkdir -p $HOME/.buildozer/android/platform/
+            cp -r $ANDROID_HOME $HOME/.buildozer/android/platform/android-sdk
+          fi
+          
           buildozer android debug
         timeout-minutes: 90
-      
-      - name: Check build output
-        run: |
-          cd android-app
-          echo "=== Bin directory ==="
-          ls -la bin/ || echo "bin/ not found"
-          find . -name "*.apk" || echo "No APK found"
       
       - name: Upload APK
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: daily-rise-apk
-          path: |
-            android-app/bin/*.apk
-            android-app/**/*.apk
+          path: android-app/bin/*.apk
           if-no-files-found: warn
