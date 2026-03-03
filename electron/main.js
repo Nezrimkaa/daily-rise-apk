@@ -2,6 +2,7 @@ const { app, BrowserWindow, Menu } = require('electron');
 const path = require('path');
 const { spawn } = require('child_process');
 const os = require('os');
+const fs = require('fs');
 
 let mainWindow;
 let backendProcess;
@@ -22,7 +23,6 @@ function startBackend() {
             process.env.PYTHON_PATH || 'python'
         ];
         
-        const fs = require('fs');
         for (const p of possiblePaths) {
             if (fs.existsSync(p)) {
                 pythonCmd = p;
@@ -32,11 +32,12 @@ function startBackend() {
     }
     
     console.log('Using Python:', pythonCmd);
+    console.log('Working directory:', path.join(__dirname, '..'));
     
-    backendProcess = spawn(pythonCmd, ['-m', 'uvicorn', 'app.main:app', '--host', '127.0.0.1', '--port', '8000'], {
+    backendProcess = spawn(pythonCmd, ['-m', 'uvicorn', 'app.main:app', '--host', '127.0.0.1', '--port', '8000', '--reload'], {
         cwd: path.join(__dirname, '..'),
         shell: true,
-        windowsHide: true,
+        windowsHide: false,
         env: { ...process.env, PYTHONIOENCODING: 'utf-8' }
     });
 
@@ -46,6 +47,14 @@ function startBackend() {
 
     backendProcess.stderr.on('data', (data) => {
         console.error(`Backend Error: ${data}`);
+    });
+    
+    backendProcess.on('close', (code) => {
+        console.log(`Backend process exited with code ${code}`);
+    });
+    
+    backendProcess.on('error', (err) => {
+        console.error('Failed to start backend:', err);
     });
 }
 
@@ -107,11 +116,13 @@ function createWindow() {
 
 app.whenReady().then(() => {
     startBackend();
-    
-    // Ждём запуска бэкенда
+
+    // Ждём запуска бэкенда (5 секунд)
     setTimeout(() => {
         createWindow();
-    }, 2000);
+        // Открываем DevTools для отладки
+        mainWindow.webContents.openDevTools();
+    }, 5000);
 });
 
 app.on('window-all-closed', () => {
