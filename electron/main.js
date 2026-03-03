@@ -9,12 +9,35 @@ let backendProcess;
 // Запуск FastAPI бэкенда
 function startBackend() {
     const platform = os.platform();
-    const pythonCmd = platform === 'win32' ? 'python.exe' : 'python3';
+    let pythonCmd = 'python';
+    
+    if (platform === 'win32') {
+        // Пробуем найти Python в стандартных путях
+        const possiblePaths = [
+            'C:\\Python314\\python.exe',
+            'C:\\Python313\\python.exe',
+            'C:\\Python312\\python.exe',
+            'C:\\Python311\\python.exe',
+            'C:\\Python310\\python.exe',
+            process.env.PYTHON_PATH || 'python'
+        ];
+        
+        const fs = require('fs');
+        for (const p of possiblePaths) {
+            if (fs.existsSync(p)) {
+                pythonCmd = p;
+                break;
+            }
+        }
+    }
+    
+    console.log('Using Python:', pythonCmd);
     
     backendProcess = spawn(pythonCmd, ['-m', 'uvicorn', 'app.main:app', '--host', '127.0.0.1', '--port', '8000'], {
         cwd: path.join(__dirname, '..'),
-        shell: false,
-        windowsHide: true
+        shell: true,
+        windowsHide: true,
+        env: { ...process.env, PYTHONIOENCODING: 'utf-8' }
     });
 
     backendProcess.stdout.on('data', (data) => {
