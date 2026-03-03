@@ -3,7 +3,7 @@ name: Build APK
 on:
   push:
     branches: [ main ]
-  workflow_dispatch:  # Позволяет запускать вручную
+  workflow_dispatch:
 
 jobs:
   build:
@@ -23,17 +23,16 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y git zip unzip openjdk-11-jdk autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev
           pip install buildozer cython
+          pip install kivy==2.2.1
       
-      - name: Fix buildozer.spec
+      - name: Setup buildozer.spec
         run: |
           cd android-app
-          if grep -q "^# version = 0.1" buildozer.spec; then
-            sed -i 's/^# version = 0.1/version = 0.1/' buildozer.spec
-          fi
+          # Проверяем и добавляем version если нет
           if ! grep -q "^version = " buildozer.spec; then
-            echo "version = 0.1" >> buildozer.spec
+            sed -i '/^\[app\]/a version = 0.1' buildozer.spec
           fi
-          cat buildozer.spec | head -10
+          cat buildozer.spec | head -20
       
       - name: Build APK
         run: |

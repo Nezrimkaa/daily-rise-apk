@@ -3,8 +3,8 @@ title = Daily Rise
 package.name = dailyrise
 package.domain = org.dailyrise
 
-source.dir = ../app
-source.include_exts = py,png,jpg,kv,html,css,js,svg,json,db
+source.dir = .
+source.include_exts = py,html,css,js,svg,json,db
 source.exclude_exts = pyc,pyo,pyd
 
 orientation = portrait
@@ -15,8 +15,10 @@ android.minapi = 21
 android.ndk = 25b
 android.arch = arm64-v8a
 
+version = 0.1
+
 # Требования Python
-requirements = python3,kivy==2.2.1,fastapi,uvicorn,sqlalchemy,aiosqlite,pydantic,pydantic-settings,jwt,cryptography
+requirements = python3,kivy==2.2.1,requests,urllib3
 
 android.add_aars =
 android.add_jars =
