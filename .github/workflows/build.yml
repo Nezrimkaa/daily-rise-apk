@@ -28,21 +28,31 @@ jobs:
           pip install buildozer cython==0.29.36
           pip install kivy==2.2.1
       
+      - name: Accept Android licenses
+        run: |
+          mkdir -p ~/.android
+          echo "count=1" > ~/.android/repositories.cfg
+          echo "86047e10140921b9e05ad182a2d66b1f246993f1" >> ~/.android/knownPackages
+          echo "24062a3813132b92f93e00176a602f82e3662c42" >> ~/.android/knownPackages
+          echo "504203651f478d4611106c09c7fd84c715f98531" >> ~/.android/knownPackages
+          echo "Android SDK licenses accepted" > ~/.android/accept_licenses
+      
       - name: Setup buildozer.spec
         run: |
           cd android-app
-          # Проверяем version
           if ! grep -q "^version = " buildozer.spec; then
             sed -i '/^\[app\]/a version = 0.1' buildozer.spec
           fi
           echo "=== buildozer.spec ==="
           cat buildozer.spec | head -25
-          echo "=== Files in android-app ==="
+          echo "=== Files ==="
           ls -la
       
       - name: Build APK
         run: |
           cd android-app
+          export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
+          export ANDROID_HOME=$HOME/.buildozer/android/platform/android-sdk
           buildozer -v android debug
         timeout-minutes: 60
       
