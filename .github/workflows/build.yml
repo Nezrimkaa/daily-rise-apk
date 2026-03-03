@@ -8,84 +8,21 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    container: ghcr.io/kivy/buildozer:latest
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
       
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
-      
-      - name: Install Python dependencies
-        run: |
-          pip install buildozer cython==0.29.36
-      
-      - name: Setup Android SDK for buildozer
-        run: |
-          # Устанавливаем JAVA_HOME и добавляем Java в PATH
-          export JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64
-          export PATH=$JAVA_HOME/bin:$PATH
-          
-          # Проверяем Java
-          java -version
-          javac -version
-          
-          # Создаём директорию
-          mkdir -p ~/.buildozer/android/platform/
-          
-          # Копируем SDK
-          echo "Copying Android SDK..."
-          cp -r /usr/local/lib/android/sdk ~/.buildozer/android/platform/android-sdk
-          
-          # Создаём symlink latest -> 12.0
-          cd ~/.buildozer/android/platform/android-sdk/cmdline-tools
-          if [ -d "12.0" ] && [ ! -d "latest" ]; then
-            ln -s 12.0 latest
-          fi
-          
-          # ВАЖНО: Создаём tools/bin с реальными файлами
-          mkdir -p ~/.buildozer/android/platform/android-sdk/tools/bin
-          
-          # Копируем sdkmanager и другие утилиты
-          cp ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager ~/.buildozer/android/platform/android-sdk/tools/bin/
-          cp ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/avdmanager ~/.buildozer/android/platform/android-sdk/tools/bin/ 2>/dev/null || true
-          cp ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/lint ~/.buildozer/android/platform/android-sdk/tools/bin/ 2>/dev/null || true
-          
-          # Делаем исполняемыми
-          chmod +x ~/.buildozer/android/platform/android-sdk/tools/bin/*
-          
-          # Создаём лицензии
-          mkdir -p ~/.buildozer/android/platform/android-sdk/licenses
-          echo "8933bad161af4178b1185d1a37fbf41ea5269c55" > ~/.buildozer/android/platform/android-sdk/licenses/android-sdk-license
-          echo "d56f5187479451eabf01fb78af6dfcb131a6481e" >> ~/.buildozer/android/platform/android-sdk/licenses/android-sdk-license
-          echo "24333f8a63b6825ea9c5514f83c2829b004d1fee" >> ~/.buildozer/android/platform/android-sdk/licenses/android-sdk-license
-          
-          # Проверяем
-          echo "=== Verification ==="
-          ls -la ~/.buildozer/android/platform/android-sdk/tools/bin/
-          
-          # Тестируем sdkmanager
-          echo "=== Testing sdkmanager ==="
-          ~/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager --version 2>&1 || echo "Version check failed but continuing"
-      
       - name: Build APK
         run: |
           cd android-app
-          export JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64
-          export PATH=$JAVA_HOME/bin:$PATH
-          export ANDROID_HOME=$HOME/.buildozer/android/platform/android-sdk
-          export ANDROID_SDK_ROOT=$HOME/.buildozer/android/platform/android-sdk
-          export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/tools/bin:$PATH
-          
           buildozer android debug
-        timeout-minutes: 60
+        timeout-minutes: 90
       
       - name: Upload APK
         uses: actions/upload-artifact@v4
-        if: always()
         with:
           name: daily-rise-apk
           path: android-app/bin/*.apk
-          if-no-files-found: warn
+          if-no-files-found: error
