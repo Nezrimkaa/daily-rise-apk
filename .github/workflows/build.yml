@@ -27,42 +27,39 @@ jobs:
         run: |
           pip install buildozer cython==0.29.36
       
-      - name: Setup Android SDK
+      - name: Pre-accept Android licenses for buildozer
         run: |
-          # Создаём директорию SDK
-          mkdir -p $ANDROID_HOME/cmdline-tools
-          cd $ANDROID_HOME/cmdline-tools
+          # Создаём структуру директорий buildozer
+          mkdir -p ~/.buildozer/android/platform/android-sdk/licenses
+          mkdir -p ~/.buildozer/android/platform/android-sdk/cmdline-tools
           
-          # Скачиваем command line tools
+          # Скачиваем command line tools для buildozer
+          cd ~/.buildozer/android/platform/android-sdk/cmdline-tools
           wget -q https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O cmdline-tools.zip
           unzip -q cmdline-tools.zip
           mv cmdline-tools latest
           rm cmdline-tools.zip
           
-          # Принимаем все лицензии автоматически
-          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses > /dev/null 2>&1 || true
+          # Создаём файлы лицензий (это обходит интерактивное принятие)
+          mkdir -p ~/.buildozer/android/platform/android-sdk/licenses
+          echo "8933bad161af4178b1185d1a37fbf41ea5269c55" > ~/.buildozer/android/platform/android-sdk/licenses/android-sdk-license
+          echo "d56f5187479451eabf01fb78af6dfcb131a6481e" >> ~/.buildozer/android/platform/android-sdk/licenses/android-sdk-license
+          echo "24333f8a63b6825ea9c5514f83c2829b004d1fee" >> ~/.buildozer/android/platform/android-sdk/licenses/android-sdk-license
+          echo "84831b9409646a918e30573bab4c9c91346d8abd" > ~/.buildozer/android/platform/android-sdk/licenses/android-sdk-preview-license
           
-          # Устанавливаем необходимые компоненты
-          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --install "platform-tools" "platforms;android-31" "build-tools;30.0.3" "ndk;25.2.9519653"
-          
-          echo "Android SDK installed successfully"
-        env:
-          ANDROID_HOME: /opt/android-sdk
+          echo "Licenses pre-accepted"
       
       - name: Setup buildozer.spec
         run: |
           cd android-app
-          echo "=== Files in android-app ==="
+          echo "=== Files ==="
           ls -la
-          echo "=== buildozer.spec ==="
           cat buildozer.spec
       
       - name: Build APK
         run: |
           cd android-app
           export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
-          export ANDROID_HOME=/opt/android-sdk
-          export PATH=$ANDROID_HOME/tools:$ANDROID_HOME/tools/bin:$ANDROID_HOME/platform-tools:$PATH
           buildozer android debug
         timeout-minutes: 90
       
@@ -71,7 +68,7 @@ jobs:
           cd android-app
           echo "=== Bin directory ==="
           ls -la bin/ || echo "bin/ not found"
-          find . -name "*.apk" 2>/dev/null || echo "No APK found"
+          find . -name "*.apk" || echo "No APK found"
       
       - name: Upload APK
         uses: actions/upload-artifact@v4
