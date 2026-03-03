@@ -24,6 +24,9 @@ jobs:
       
       - name: Setup Android SDK for buildozer
         run: |
+          # Устанавливаем JAVA_HOME (Temurin 17 есть на runner)
+          export JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64
+          
           # Создаём директорию
           mkdir -p ~/.buildozer/android/platform/
           
@@ -37,15 +40,13 @@ jobs:
             ln -s 12.0 latest
           fi
           
-          # ВАЖНО: Создаём tools/bin с реальными файлами (не symlink!)
+          # ВАЖНО: Создаём tools/bin с реальными файлами
           mkdir -p ~/.buildozer/android/platform/android-sdk/tools/bin
           
-          # Копируем sdkmanager и другие утилиты из cmdline-tools
+          # Копируем sdkmanager и другие утилиты
           cp ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager ~/.buildozer/android/platform/android-sdk/tools/bin/
           cp ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/avdmanager ~/.buildozer/android/platform/android-sdk/tools/bin/ 2>/dev/null || true
-          cp ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/apkmanager ~/.buildozer/android/platform/android-sdk/tools/bin/ 2>/dev/null || true
           cp ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/lint ~/.buildozer/android/platform/android-sdk/tools/bin/ 2>/dev/null || true
-          cp ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/profgen ~/.buildozer/android/platform/android-sdk/tools/bin/ 2>/dev/null || true
           
           # Делаем исполняемыми
           chmod +x ~/.buildozer/android/platform/android-sdk/tools/bin/*
@@ -59,13 +60,15 @@ jobs:
           # Проверяем
           echo "=== Verification ==="
           ls -la ~/.buildozer/android/platform/android-sdk/tools/bin/
-          file ~/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager
-          ~/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager --version 2>&1 || echo "Version check failed"
+          
+          # Тестируем sdkmanager с правильным JAVA_HOME
+          echo "=== Testing sdkmanager ==="
+          $JAVA_HOME/bin/java -version
+          ~/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager --version 2>&1 || echo "Version check failed but continuing"
       
       - name: Build APK
         run: |
           cd android-app
-          # Используем Temurin 17 (он есть на runner)
           export JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64
           export ANDROID_HOME=$HOME/.buildozer/android/platform/android-sdk
           export ANDROID_SDK_ROOT=$HOME/.buildozer/android/platform/android-sdk
