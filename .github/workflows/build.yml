@@ -7,23 +7,19 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     
     steps:
       - uses: actions/checkout@v4
       
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Build APK with Docker
+        uses: addnab/docker-run-action@v3
         with:
-          python-version: '3.8'
-      
-      - name: Install buildozer
-        run: pip install buildozer cython==0.29.36
-      
-      - name: Build APK
-        run: |
-          cd android-app
-          buildozer android debug
+          image: ghcr.io/kivy/buildozer:latest
+          options: -v ${{ github.workspace }}:/home/user/host
+          run: |
+            cd /home/user/host/android-app
+            buildozer android debug
       
       - name: Upload APK
         uses: actions/upload-artifact@v4
